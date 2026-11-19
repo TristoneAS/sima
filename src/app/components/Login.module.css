@@ -1,0 +1,315 @@
+.screen {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 24px 120px;
+  overflow: hidden;
+  background: #eef3f8;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 100%);
+  overflow: hidden;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(23, 32, 51, 0.12);
+}
+
+.convoy {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 148px;
+  pointer-events: none;
+}
+
+.fleet,
+.runner {
+  position: absolute;
+  z-index: 1;
+  bottom: 14px;
+  left: 0;
+  animation: drive 18s linear infinite;
+}
+
+.runnerB {
+  animation-duration: 24s;
+  animation-delay: -9s;
+}
+
+.runnerC {
+  animation-duration: 20s;
+  animation-delay: -15s;
+}
+
+@keyframes drive {
+  from {
+    transform: translateX(-42vw);
+  }
+  to {
+    transform: translateX(108vw);
+  }
+}
+
+.truck {
+  width: min(280px, 32vw);
+  height: auto;
+  display: block;
+}
+
+.road {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 26px;
+  background: #9eacba;
+}
+
+.lane {
+  position: absolute;
+  top: 15px;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.85) 0 28px,
+    transparent 28px 56px
+  );
+  animation: lane 1.1s linear infinite;
+}
+
+@keyframes lane {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -56px 0;
+  }
+}
+
+.stripe {
+  height: 5px;
+  background: linear-gradient(90deg, #1e88e5 0%, #26c6da 38%, #7cb342 68%, #fdd835 100%);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 22px 24px 24px;
+}
+
+.logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.logo img {
+  width: 168px;
+  height: auto;
+}
+
+.body h1 {
+  margin: 8px 0 0;
+  color: #1c1c1c;
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.hint {
+  margin: 8px 0 18px;
+  color: #8d8d8d;
+  font-size: 15px;
+  text-align: center;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  position: relative;
+  display: block;
+  height: 56px;
+  border: 1px solid #bdbdbd;
+  border-radius: 4px;
+}
+
+.field:focus-within {
+  border: 2px solid #1976d2;
+}
+
+.field input {
+  width: 100%;
+  height: 100%;
+  padding: 8px 14px 0 42px;
+  border: 0;
+  border-radius: 4px;
+  color: #1c1c1c;
+  font: inherit;
+  font-size: 16px;
+  background: transparent;
+}
+
+.field input:focus {
+  outline: none;
+}
+
+.withReveal input {
+  padding-right: 42px;
+}
+
+.reveal {
+  position: absolute;
+  top: 14px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #757575;
+  cursor: pointer;
+}
+
+.reveal svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.reveal:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.legend {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 10px;
+  padding: 0 5px;
+  transform: translateY(-50%);
+  background: #fff;
+  color: #1976d2;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.icon {
+  position: absolute;
+  top: 17px;
+  left: 12px;
+  width: 22px;
+  height: 22px;
+  color: #757575;
+}
+
+.icon svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+.error {
+  margin: 10px 0 0;
+  color: #b42318;
+  font-size: 13px;
+}
+
+.submit {
+  height: 42px;
+  margin-top: 22px;
+  border: 0;
+  border-radius: 4px;
+  background: #1976d2;
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submit:hover:not(:disabled) {
+  background: #1565c0;
+}
+
+.submit:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+@media (min-width: 600px) {
+  .body {
+    padding: 28px 36px 30px;
+  }
+}
+
+@media (max-height: 760px) {
+  .screen {
+    padding-bottom: 108px;
+  }
+
+  .body h1 {
+    font-size: 24px;
+  }
+
+  .hint {
+    margin-bottom: 14px;
+    font-size: 14px;
+  }
+
+  .logo img {
+    width: 148px;
+  }
+}
+
+@media (max-width: 720px) {
+  .truck {
+    width: min(210px, 46vw);
+  }
+
+  .runnerB {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .runner,
+  .lane {
+    animation: none;
+  }
+
+  .runnerA {
+    left: 2%;
+  }
+
+  .runnerB {
+    left: 34%;
+  }
+
+  .runnerC {
+    left: 66%;
+  }
+}
