@@ -1,7 +1,8 @@
 import { isAuthResponseOk, tieneRolSimaAdmin } from "@/libs/auth_login";
 
 function baseAuth() {
-  return String(process.env.NEXT_PUBLIC_AUTH_SERVER_URL || "")
+  const configurada = process.env.AUTH_SERVER_URL || process.env.NEXT_PUBLIC_AUTH_SERVER_URL;
+  return String(configurada || "http://TFTDELSRV011:5000")
     .trim()
     .replace(/\/+$/, "");
 }

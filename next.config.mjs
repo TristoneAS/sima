@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  allowedDevOrigins: ["10.56.107.127", "10.56.106.48", "tftdelsrv011"],
+  allowedDevOrigins: ["*.*.*.*", "tftdelsrv011"],
   experimental: {
     agentFeedback: true,
   },
