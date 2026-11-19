@@ -6,7 +6,7 @@
     "dev": "next dev",
     "ipad": "node scripts/https-proxy.mjs",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3038",
     "lint": "eslint"
   },
   "dependencies": {
