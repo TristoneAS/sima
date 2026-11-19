@@ -1,14 +1,16 @@
 import { isAuthResponseOk, tieneRolSimaAdmin } from "@/libs/auth_login";
 
 function baseAuth() {
-  const configurada = process.env.AUTH_SERVER_URL || process.env.NEXT_PUBLIC_AUTH_SERVER_URL;
-  return String(configurada || "http://TFTDELSRV011:5000")
-    .trim()
-    .replace(/\/+$/, "");
+  const configurada = process.env.NEXT_PUBLIC_AUTH_SERVER_URL;
+  return String(configurada).trim().replace(/\/+$/, "");
 }
 
 function rutaAuth() {
-  const ruta = String(process.env.AUTH_PATH || process.env.NEXT_PUBLIC_AUTH_PATH || "/SIMA_RH/AUTHENTICATE").trim();
+  const ruta = String(
+    process.env.AUTH_PATH ||
+      process.env.NEXT_PUBLIC_AUTH_PATH ||
+      "/SIMA_RH/AUTHENTICATE",
+  ).trim();
   return ruta.startsWith("/") ? ruta : `/${ruta}`;
 }
 
@@ -39,11 +41,15 @@ export async function llamarAuthenticate(usuario, clave) {
     });
   } catch (error) {
     if (error?.name === "TimeoutError" || error?.name === "AbortError") {
-      const fallo = new Error("Error al conectar con el servidor de autenticación, contacte a soporte");
+      const fallo = new Error(
+        "Error al conectar con el servidor de autenticación, contacte a soporte",
+      );
       fallo.status = 502;
       throw fallo;
     }
-    const fallo = new Error("Error al conectar con el servidor de autenticación, contacte a soporte");
+    const fallo = new Error(
+      "Error al conectar con el servidor de autenticación, contacte a soporte",
+    );
     fallo.status = 502;
     throw fallo;
   }
@@ -57,7 +63,8 @@ export async function llamarAuthenticate(usuario, clave) {
 
   const persona = authData?.data?.users?.[0] || {};
   const cuenta = String(persona.sAMAccountName || acceso).trim() || acceso;
-  const nombre = String(persona.displayName || persona.cn || cuenta).trim() || cuenta;
+  const nombre =
+    String(persona.displayName || persona.cn || cuenta).trim() || cuenta;
   return {
     response,
     authData,
