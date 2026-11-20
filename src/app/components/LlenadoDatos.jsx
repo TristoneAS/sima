@@ -129,7 +129,6 @@ export default function LlenadoDatos() {
   const [pendientes, setPendientes] = useState(0);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [avisoHttps, setAvisoHttps] = useState("");
   const [borradorListo, setBorradorListo] = useState(false);
   const [fechaVista, setFechaVista] = useState("");
   const [verTodas, setVerTodas] = useState(false);
@@ -245,12 +244,6 @@ export default function LlenadoDatos() {
     }
     setFechaVista(draft?.form?.fecha || todayInput());
     setBorradorListo(true);
-    if (!window.isSecureContext) {
-      const host = window.location.hostname;
-      if (host !== "localhost" && host !== "127.0.0.1") {
-        setAvisoHttps(`https://${host}:3443/dashboard/llenado`);
-      }
-    }
     guardarCopiaDeLlenado();
     loadAll();
     setForm((prev) => ({
@@ -535,15 +528,6 @@ export default function LlenadoDatos() {
           salió, cuántas personas iban y quién manejaba. En el iPad no jale la
           pantalla hacia abajo: Safari la recarga y puede duplicar el viaje.
         </Typography>
-
-        {avisoHttps ? (
-          <Alert severity="warning" sx={{ mb: 1.25 }}>
-            En el iPad abra esta pantalla una vez, con internet, desde{" "}
-            <a href={avisoHttps}>{avisoHttps}</a>. Si Safari dice que la conexión no es
-            privada, toque Mostrar detalles y visite el sitio. Así queda guardada y vuelve
-            a abrir al minimizar, aunque no haya internet.
-          </Alert>
-        ) : null}
 
         {transportes.length === 0 && !loading && (
           <Alert severity="info" sx={{ mb: 2 }}>
