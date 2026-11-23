@@ -39,6 +39,7 @@ export default function TransporteCatalog() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [sugerencias, setSugerencias] = useState([]);
 
   const loadRows = useCallback(async () => {
     setLoading(true);
@@ -48,12 +49,15 @@ export default function TransporteCatalog() {
       const data = await response.json();
       if (!response.ok || !data.success) {
         setRows([]);
+        setSugerencias([]);
         setError(data.error || "No se pudo cargar el catálogo");
         return;
       }
       setRows(data.data || []);
+      setSugerencias(Array.isArray(data.sugerencias) ? data.sugerencias : []);
     } catch {
       setRows([]);
+      setSugerencias([]);
       setError("No se pudo conectar con el servidor");
     } finally {
       setLoading(false);
@@ -78,6 +82,13 @@ export default function TransporteCatalog() {
   function cancelEdit() {
     setEditId(null);
     setForm(emptyForm);
+  }
+
+  function usarSugerencia(nombre) {
+    setEditId(null);
+    setForm({ numero: nombre, tipo: "Camión", capacidad: "" });
+    setSuccess("");
+    setError("");
   }
 
   async function submit(event) {
@@ -154,6 +165,24 @@ export default function TransporteCatalog() {
         {success && (
           <Alert severity="success" sx={{ mb: 2 }}>
             {success}
+          </Alert>
+        )}
+        {sugerencias.length > 0 && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Estos camiones se escribieron en Llenado de datos y no están dados de alta.
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
+              {sugerencias.map((nombre) => (
+                <Button
+                  key={nombre}
+                  size="small"
+                  variant="outlined"
+                  onClick={() => usarSugerencia(nombre)}
+                  sx={{ textTransform: "none" }}
+                >
+                  Dar de alta {nombre}
+                </Button>
+              ))}
+            </Box>
           </Alert>
         )}
 

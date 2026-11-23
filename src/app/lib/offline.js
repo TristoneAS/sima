@@ -112,7 +112,8 @@ export function filaLocal(op, catalogos) {
       ? op.id_llegada
       : `local-${op.cliente_id}`,
     cliente_id: op.cliente_id,
-    numero: transporte?.numero || payload.numero || "",
+    numero: transporte?.numero || payload.numero || payload.transporte || "",
+    transporte: transporte?.numero || payload.transporte || payload.numero || "",
     tipo: transporte?.tipo || payload.tipo || "",
     capacidad: transporte?.capacidad ?? payload.capacidad ?? null,
     chofer: chofer?.nombre || payload.chofer || "",

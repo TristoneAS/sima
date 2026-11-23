@@ -101,6 +101,12 @@ export async function createTransporte({ numero, tipo, capacidad }) {
       "INSERT INTO transportes (numero, tipo, capacidad, estado) VALUES (?, ?, ?, 'activo')",
       [numero, tipo, capacidad],
     );
+    await consultar(
+      `UPDATE llegadas
+       SET id_transporte = ?
+       WHERE estado = 'activo' AND id_transporte IS NULL AND LOWER(TRIM(transporte)) = LOWER(TRIM(?))`,
+      [header.insertId, numero],
+    );
     const [creado] = await consultar(
       "SELECT id_transporte, numero, tipo, capacidad, estado, fecha_creacion FROM transportes WHERE id_transporte = ?",
       [header.insertId],
@@ -154,6 +160,38 @@ export async function deleteTransporte(id) {
   return row;
 }
 
+export async function listSugerenciasTransporte() {
+  const rows = await consultar(`
+    SELECT DISTINCT TRIM(l.transporte) AS nombre
+    FROM llegadas l
+    WHERE l.estado = 'activo'
+      AND l.id_transporte IS NULL
+      AND TRIM(IFNULL(l.transporte, '')) <> ''
+      AND NOT EXISTS (
+        SELECT 1 FROM transportes t
+        WHERE t.estado = 'activo' AND LOWER(TRIM(t.numero)) = LOWER(TRIM(l.transporte))
+      )
+    ORDER BY nombre
+  `);
+  return rows.map((row) => row.nombre);
+}
+
+export async function listSugerenciasChofer() {
+  const rows = await consultar(`
+    SELECT DISTINCT TRIM(l.chofer) AS nombre
+    FROM llegadas l
+    WHERE l.estado = 'activo'
+      AND l.id_chofer IS NULL
+      AND TRIM(IFNULL(l.chofer, '')) <> ''
+      AND NOT EXISTS (
+        SELECT 1 FROM choferes c
+        WHERE c.estado = 'activo' AND LOWER(TRIM(c.nombre)) = LOWER(TRIM(l.chofer))
+      )
+    ORDER BY nombre
+  `);
+  return rows.map((row) => row.nombre);
+}
+
 export async function listChoferes() {
   const rows = await consultar(
     "SELECT id_chofer, nombre, telefono, estado, fecha_creacion FROM choferes WHERE estado = 'activo'",
@@ -171,6 +209,12 @@ export async function createChofer({ nombre, telefono }) {
   const header = await consultar(
     "INSERT INTO choferes (nombre, telefono, estado) VALUES (?, ?, 'activo')",
     [nombre, telefono],
+  );
+  await consultar(
+    `UPDATE llegadas
+     SET id_chofer = ?
+     WHERE estado = 'activo' AND id_chofer IS NULL AND LOWER(TRIM(chofer)) = LOWER(TRIM(?))`,
+    [header.insertId, nombre],
   );
   const [creado] = await consultar(
     "SELECT id_chofer, nombre, telefono, estado, fecha_creacion FROM choferes WHERE id_chofer = ?",
@@ -360,7 +404,7 @@ export async function deleteRuta(id) {
 }
 
 const LLEGADA_SELECT = `
-  SELECT l.id_llegada, l.cliente_id, l.id_transporte, l.fecha, l.turno,
+  SELECT l.id_llegada, l.cliente_id, l.id_transporte, l.transporte, l.fecha, l.turno,
          l.hora_entrada, l.id_procedencia, l.procedencia, l.personas_entrada,
          l.hora_salida, l.id_destino, l.destino, l.personas_salida,
          l.id_chofer, l.chofer, l.estado, l.fecha_creacion,
@@ -394,7 +438,8 @@ function filaLlegada(row) {
     id_chofer: row.id_chofer,
     chofer: row.chofer_nombre || row.chofer || "",
     telefono: row.telefono || "",
-    numero: row.numero || "",
+    numero: row.numero || row.transporte || "",
+    transporte: row.transporte || row.numero || "",
     tipo: row.tipo || "",
     capacidad: row.capacidad == null ? null : Number(row.capacidad),
     estado: row.estado,
@@ -452,23 +497,48 @@ export async function createLlegada(value) {
   return trabajo;
 }
 
+async function resolverTransporte(value) {
+  if (value.id_transporte) return assertTransporteActivo(value.id_transporte);
+  const texto = String(value.transporte || "").trim();
+  if (!texto) throw errorEstado("Escriba el camión o seleccione uno registrado", 400);
+  const rows = await consultar(
+    "SELECT id_transporte, numero, tipo, capacidad FROM transportes WHERE estado = 'activo' AND LOWER(TRIM(numero)) = LOWER(TRIM(?)) LIMIT 1",
+    [texto],
+  );
+  if (rows.length) return rows[0];
+  return { id_transporte: null, numero: texto };
+}
+
+async function resolverChofer(value) {
+  if (value.id_chofer) return assertChoferActivo(value.id_chofer);
+  const texto = String(value.chofer || "").trim();
+  if (!texto) throw errorEstado("Escriba el chofer o seleccione uno registrado", 400);
+  const rows = await consultar(
+    "SELECT id_chofer, nombre, telefono FROM choferes WHERE estado = 'activo' AND LOWER(TRIM(nombre)) = LOWER(TRIM(?)) LIMIT 1",
+    [texto],
+  );
+  if (rows.length) return rows[0];
+  return { id_chofer: null, nombre: texto };
+}
+
 async function crearLlegadaUnica(cliente_id, value) {
   const existente = await obtenerLlegada("l.cliente_id = ?", [cliente_id]);
   if (existente) return existente;
 
-  await assertTransporteActivo(value.id_transporte);
-  const chofer = await assertChoferActivo(value.id_chofer);
+  const transporte = await resolverTransporte(value);
+  const chofer = await resolverChofer(value);
   const procedencia = value.id_procedencia ? await assertLugarActivo(value.id_procedencia, "la procedencia") : null;
   const destino = await assertLugarActivo(value.id_destino, "el destino");
 
   const header = await consultar(
     `INSERT INTO llegadas (
-      cliente_id, id_transporte, fecha, turno, hora_entrada, id_procedencia, procedencia,
+      cliente_id, id_transporte, transporte, fecha, turno, hora_entrada, id_procedencia, procedencia,
       personas_entrada, hora_salida, id_destino, destino, personas_salida, id_chofer, chofer, estado
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'activo')`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'activo')`,
     [
       cliente_id,
-      value.id_transporte,
+      transporte.id_transporte,
+      transporte.numero,
       value.fecha,
       value.turno,
       value.hora_entrada,
@@ -479,7 +549,7 @@ async function crearLlegadaUnica(cliente_id, value) {
       value.id_destino,
       destino.nombre,
       value.personas_salida,
-      value.id_chofer,
+      chofer.id_chofer,
       chofer.nombre,
     ],
   );
@@ -487,18 +557,19 @@ async function crearLlegadaUnica(cliente_id, value) {
 }
 
 export async function updateLlegada(id, value) {
-  await assertTransporteActivo(value.id_transporte);
-  const chofer = await assertChoferActivo(value.id_chofer);
+  const transporte = await resolverTransporte(value);
+  const chofer = await resolverChofer(value);
   const procedencia = value.id_procedencia ? await assertLugarActivo(value.id_procedencia, "la procedencia") : null;
   const destino = await assertLugarActivo(value.id_destino, "el destino");
   const header = await consultar(
     `UPDATE llegadas SET
-      id_transporte = ?, fecha = ?, turno = ?, hora_entrada = ?, id_procedencia = ?, procedencia = ?,
+      id_transporte = ?, transporte = ?, fecha = ?, turno = ?, hora_entrada = ?, id_procedencia = ?, procedencia = ?,
       personas_entrada = ?, hora_salida = ?, id_destino = ?, destino = ?, personas_salida = ?,
       id_chofer = ?, chofer = ?
      WHERE id_llegada = ? AND estado = 'activo'`,
     [
-      value.id_transporte,
+      transporte.id_transporte,
+      transporte.numero,
       value.fecha,
       value.turno,
       value.hora_entrada,
@@ -509,7 +580,7 @@ export async function updateLlegada(id, value) {
       value.id_destino,
       destino.nombre,
       value.personas_salida,
-      value.id_chofer,
+      chofer.id_chofer,
       chofer.nombre,
       id,
     ],

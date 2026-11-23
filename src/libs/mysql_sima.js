@@ -67,7 +67,7 @@ async function ensureSchema(db) {
     CREATE TABLE IF NOT EXISTS llegadas (
       id_llegada INT NOT NULL AUTO_INCREMENT,
       cliente_id VARCHAR(36) NULL,
-      id_transporte INT NOT NULL,
+      id_transporte INT NULL,
       fecha DATE NOT NULL,
       turno ENUM('TA', 'TB', 'TC', 'TE') NOT NULL,
       hora_entrada TIME NOT NULL,
@@ -79,6 +79,7 @@ async function ensureSchema(db) {
       destino VARCHAR(120) NULL,
       personas_salida INT NOT NULL,
       id_chofer INT NULL,
+      transporte VARCHAR(120) NULL,
       chofer VARCHAR(120) NOT NULL,
       estado ENUM('activo', 'inactivo') NOT NULL DEFAULT 'activo',
       fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -93,6 +94,8 @@ async function ensureSchema(db) {
     "ADD COLUMN id_procedencia INT NULL",
     "ADD COLUMN id_destino INT NULL",
     "ADD COLUMN id_chofer INT NULL",
+    "ADD COLUMN transporte VARCHAR(120) NULL",
+    "MODIFY COLUMN id_transporte INT NULL",
     "ADD UNIQUE KEY uk_llegadas_cliente (cliente_id)",
   ];
   for (const clause of extras) {

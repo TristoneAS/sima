@@ -52,8 +52,11 @@ function todayInput() {
   return local.toISOString().slice(0, 10);
 }
 
+const MANUAL = "manual";
+
 const blankForm = {
   id_transporte: "",
+  transporte: "",
   fecha: "",
   turno: "",
   hora_entrada: "",
@@ -63,6 +66,7 @@ const blankForm = {
   id_destino: "",
   personas_salida: "",
   id_chofer: "",
+  chofer: "",
 };
 
 function emptyForm() {
@@ -361,12 +365,30 @@ export default function LlenadoDatos() {
     if (name === "fecha") mostrarDia(value);
   }
 
+  function setTransporte(value) {
+    setForm((prev) => ({
+      ...prev,
+      id_transporte: value,
+      transporte: value === MANUAL ? prev.transporte : "",
+    }));
+  }
+
+  function setChofer(value) {
+    setForm((prev) => ({
+      ...prev,
+      id_chofer: value,
+      chofer: value === MANUAL ? prev.chofer : "",
+    }));
+  }
+
   function startEdit(row) {
     setEditId(row.id_llegada);
     setEditClienteId(row.cliente_id || null);
     setEditLocal(Boolean(row.pendiente) && String(row.id_llegada).startsWith("local-"));
+    const nombreCamion = row.transporte || row.numero || "";
     setForm({
-      id_transporte: String(row.id_transporte),
+      id_transporte: row.id_transporte ? String(row.id_transporte) : nombreCamion ? MANUAL : "",
+      transporte: row.id_transporte ? "" : nombreCamion,
       fecha: row.fecha,
       turno: row.turno || "",
       hora_entrada: horaCorta(row.hora_entrada),
@@ -375,7 +397,8 @@ export default function LlenadoDatos() {
       hora_salida: horaCorta(row.hora_salida),
       id_destino: row.id_destino ? String(row.id_destino) : "",
       personas_salida: String(row.personas_salida),
-      id_chofer: row.id_chofer ? String(row.id_chofer) : "",
+      id_chofer: row.id_chofer ? String(row.id_chofer) : row.chofer ? MANUAL : "",
+      chofer: row.id_chofer ? "" : row.chofer || "",
     });
     setSuccess("");
     setError("");
@@ -408,13 +431,40 @@ export default function LlenadoDatos() {
     setError("");
     setSuccess("");
     const cliente_id = editClienteId || nuevoClienteId();
+    const camionManual = form.id_transporte === MANUAL;
+    const choferManual = form.id_chofer === MANUAL;
+    const nombreCamion = String(form.transporte || "").trim();
+    const nombreChofer = String(form.chofer || "").trim();
+    if (!camionManual && !form.id_transporte) {
+      setError("Seleccione el camión o escríbalo manualmente");
+      setSaving(false);
+      return;
+    }
+    if (camionManual && !nombreCamion) {
+      setError("Escriba el nombre o número del camión");
+      setSaving(false);
+      return;
+    }
+    if (!choferManual && !form.id_chofer) {
+      setError("Seleccione el chofer o escríbalo manualmente");
+      setSaving(false);
+      return;
+    }
+    if (choferManual && !nombreChofer) {
+      setError("Escriba el nombre del chofer");
+      setSaving(false);
+      return;
+    }
     const payload = {
       ...form,
       cliente_id,
       id_procedencia: form.id_procedencia ? Number(form.id_procedencia) : null,
       id_destino: Number(form.id_destino),
-      id_transporte: Number(form.id_transporte),
-      id_chofer: Number(form.id_chofer),
+      id_transporte: camionManual ? null : Number(form.id_transporte),
+      transporte: camionManual ? nombreCamion : "",
+      numero: camionManual ? nombreCamion : transporteActual?.numero || "",
+      id_chofer: choferManual ? null : Number(form.id_chofer),
+      chofer: choferManual ? nombreChofer : choferActual?.nombre || "",
       personas_entrada: Number(form.personas_entrada),
       personas_salida: Number(form.personas_salida),
     };
@@ -531,12 +581,12 @@ export default function LlenadoDatos() {
 
         {transportes.length === 0 && !loading && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            Primero dé de alta las unidades en Configuración, Transporte.
+            No hay camiones dados de alta. Puede escribir el nombre a mano; después aparecerá en Configuración para registrarlo.
           </Alert>
         )}
         {choferes.length === 0 && !loading && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            Primero dé de alta los choferes en Configuración, Choferes.
+            No hay choferes dados de alta. Puede escribir el nombre a mano; después aparecerá en Configuración para registrarlo.
           </Alert>
         )}
         {lugares.length === 0 && !loading && (
@@ -597,9 +647,15 @@ export default function LlenadoDatos() {
               sx={{ gridColumn: { xs: "1 / -1", sm: "span 2" } }}
               size="small"
               value={form.id_transporte ?? ""}
-              onChange={(event) => setField("id_transporte", event.target.value)}
+              onChange={(event) => setTransporte(event.target.value)}
               required
-              helperText={transporteActual ? `Capacidad: ${transporteActual.capacidad}` : undefined}
+              helperText={
+                transporteActual
+                  ? `Capacidad: ${transporteActual.capacidad}`
+                  : form.id_transporte === MANUAL
+                    ? "No está dado de alta. Quedará como sugerencia en Configuración."
+                    : undefined
+              }
               slotProps={{ inputLabel: { shrink: true }, select: { displayEmpty: true } }}
             >
               <MenuItem value="" disabled>
@@ -610,7 +666,19 @@ export default function LlenadoDatos() {
                   {row.numero} · {row.tipo}
                 </MenuItem>
               ))}
+              <MenuItem value={MANUAL}>Escribir manualmente</MenuItem>
             </TextField>
+            {form.id_transporte === MANUAL && (
+              <TextField
+                label="Nombre o número del camión"
+                sx={{ gridColumn: { xs: "1 / -1", sm: "span 2" } }}
+                size="small"
+                value={form.transporte}
+                onChange={(event) => setField("transporte", event.target.value)}
+                required
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            )}
             <TextField
               label="Fecha"
               type="date"
@@ -644,9 +712,15 @@ export default function LlenadoDatos() {
               sx={{ gridColumn: { xs: "1 / -1", sm: "span 2" } }}
               size="small"
               value={form.id_chofer ?? ""}
-              onChange={(event) => setField("id_chofer", event.target.value)}
+              onChange={(event) => setChofer(event.target.value)}
               required
-              helperText={choferActual ? `Teléfono: ${choferActual.telefono}` : undefined}
+              helperText={
+                choferActual
+                  ? `Teléfono: ${choferActual.telefono}`
+                  : form.id_chofer === MANUAL
+                    ? "No está dado de alta. Quedará como sugerencia en Configuración."
+                    : undefined
+              }
               slotProps={{ inputLabel: { shrink: true }, select: { displayEmpty: true } }}
             >
               <MenuItem value="" disabled>
@@ -657,7 +731,19 @@ export default function LlenadoDatos() {
                   {row.nombre}
                 </MenuItem>
               ))}
+              <MenuItem value={MANUAL}>Escribir manualmente</MenuItem>
             </TextField>
+            {form.id_chofer === MANUAL && (
+              <TextField
+                label="Nombre del chofer"
+                sx={{ gridColumn: { xs: "1 / -1", sm: "span 2" } }}
+                size="small"
+                value={form.chofer}
+                onChange={(event) => setField("chofer", event.target.value)}
+                required
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            )}
             <TextField
               label="Hora de entrada"
               type="time"
@@ -735,12 +821,7 @@ export default function LlenadoDatos() {
               type="submit"
               variant="contained"
               startIcon={<Add />}
-              disabled={
-                saving ||
-                transportes.length === 0 ||
-                choferes.length === 0 ||
-                lugares.length === 0
-              }
+              disabled={saving || lugares.length === 0}
               sx={{ textTransform: "none" }}
             >
               {saving ? "Guardando..." : offline ? "Guardar en este equipo" : editId ? "Guardar" : "Registrar"}

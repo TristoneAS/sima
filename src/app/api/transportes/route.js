@@ -1,11 +1,12 @@
-import { connection } from "next/server";
+import { connection, NextResponse } from "next/server";
 import { jsonError, jsonOk, parseTransporte } from "@/libs/api_helpers";
-import { createTransporte, listTransportes } from "@/libs/sima_db";
+import { createTransporte, listSugerenciasTransporte, listTransportes } from "@/libs/sima_db";
 
 export async function GET() {
   await connection();
   try {
-    return jsonOk(await listTransportes());
+    const [data, sugerencias] = await Promise.all([listTransportes(), listSugerenciasTransporte()]);
+    return NextResponse.json({ success: true, data, sugerencias });
   } catch (error) {
     return jsonError("No se pudo consultar el catálogo de transportes", 500, error.message);
   }

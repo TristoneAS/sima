@@ -37,8 +37,18 @@ function parseEntero(raw) {
 
 const TURNOS = ["TA", "TB", "TC", "TE"];
 
+function textoManual(raw) {
+  return String(raw ?? "").trim();
+}
+
+function idOpcional(raw) {
+  if (raw === "" || raw == null || raw === "manual") return null;
+  return parseEntero(raw);
+}
+
 export function parseLlegada(body) {
-  const id_transporte = parseEntero(body?.id_transporte);
+  const id_transporte = idOpcional(body?.id_transporte);
+  const transporte = textoManual(body?.transporte || body?.numero);
   const fecha = String(body?.fecha ?? "").trim();
   const turno = String(body?.turno ?? "").trim();
   const hora_entrada = String(body?.hora_entrada ?? "").trim();
@@ -50,9 +60,13 @@ export function parseLlegada(body) {
   const hora_salida = String(body?.hora_salida ?? "").trim();
   const id_destino = parseEntero(body?.id_destino);
   const personas_salida = parseEntero(body?.personas_salida);
-  const id_chofer = parseEntero(body?.id_chofer);
+  const id_chofer = idOpcional(body?.id_chofer);
+  const chofer = textoManual(body?.chofer);
 
-  if (!Number.isInteger(id_transporte) || id_transporte < 1) {
+  if (id_transporte === null) {
+    if (!transporte) return { error: "Escriba el camión o seleccione uno registrado" };
+    if (transporte.length > 120) return { error: "El nombre del camión es demasiado largo" };
+  } else if (!Number.isInteger(id_transporte) || id_transporte < 1) {
     return { error: "Seleccione el transporte que llegó" };
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return { error: "Indique la fecha" };
@@ -71,7 +85,10 @@ export function parseLlegada(body) {
   if (!Number.isInteger(personas_salida) || personas_salida < 0) {
     return { error: "Indique el número de personas de salida" };
   }
-  if (!Number.isInteger(id_chofer) || id_chofer < 1) {
+  if (id_chofer === null) {
+    if (!chofer) return { error: "Escriba el chofer o seleccione uno registrado" };
+    if (chofer.length > 120) return { error: "El nombre del chofer es demasiado largo" };
+  } else if (!Number.isInteger(id_chofer) || id_chofer < 1) {
     return { error: "Seleccione el chofer" };
   }
 
@@ -83,6 +100,7 @@ export function parseLlegada(body) {
   return {
     value: {
       id_transporte,
+      transporte: id_transporte ? "" : transporte,
       fecha,
       turno,
       hora_entrada,
@@ -92,6 +110,7 @@ export function parseLlegada(body) {
       id_destino,
       personas_salida,
       id_chofer,
+      chofer: id_chofer ? "" : chofer,
       ...(clienteOk ? { cliente_id } : {}),
     },
   };

@@ -10,6 +10,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   Paper,
   Table,
   TableBody,
@@ -20,7 +21,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Add, Delete, Edit, Undo } from "@mui/icons-material";
+import { Add, Close, Delete, Edit, Undo } from "@mui/icons-material";
 import DashboardShell from "./DashboardShell";
 
 const MapaRutas = dynamic(() => import("./MapaRutas"), { ssr: false });
@@ -331,8 +332,22 @@ export default function LugaresCatalog() {
           </Table>
         </TableContainer>
 
-        <Dialog open={Boolean(trazando)} onClose={cerrarTrazo} fullWidth maxWidth="md">
-          <DialogTitle>Trazar ruta{trazando ? `: ${trazando.nombre}` : ""}</DialogTitle>
+        <Dialog
+          open={Boolean(trazando)}
+          onClose={(_event, reason) => {
+            if (reason === "backdropClick" || reason === "escapeKeyDown") return;
+          }}
+          fullWidth
+          maxWidth="md"
+        >
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, pr: 1 }}>
+            <Box component="span" sx={{ flex: 1 }}>
+              Trazar ruta{trazando ? `: ${trazando.nombre}` : ""}
+            </Box>
+            <IconButton aria-label="Cerrar" onClick={cerrarTrazo} size="small">
+              <Close />
+            </IconButton>
+          </DialogTitle>
           <DialogContent>
             <Typography variant="body2" sx={{ mb: 1, color: BRAND.muted }}>
               Haga clic en el mapa para marcar el recorrido. Se guarda en este lugar.
@@ -364,9 +379,6 @@ export default function LugaresCatalog() {
               sx={{ textTransform: "none" }}
             >
               Deshacer
-            </Button>
-            <Button onClick={cerrarTrazo} sx={{ textTransform: "none" }}>
-              Cancelar
             </Button>
             <Button
               variant="contained"
