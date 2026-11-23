@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   Alert,
   Box,
@@ -35,6 +35,7 @@ import {
   nuevoClienteId,
   sincronizarOutbox,
 } from "@/app/lib/offline";
+import { readSession, subscribeSession } from "@/app/lib/session";
 import { BRAND } from "@/libs/theme_palette";
 import {
   pageSubtitleSx,
@@ -71,6 +72,10 @@ const blankForm = {
 
 function emptyForm() {
   return { ...blankForm, fecha: todayInput() };
+}
+
+function adminEnCliente() {
+  return readSession()?.configuracion === true;
 }
 
 const BORRADOR_KEY = "sima_borrador_llenado";
@@ -138,6 +143,7 @@ export default function LlenadoDatos() {
   const [verTodas, setVerTodas] = useState(false);
   const [confirmados, setConfirmados] = useState([]);
   const [avisoAbierto, setAvisoAbierto] = useState(false);
+  const esAdmin = useSyncExternalStore(subscribeSession, adminEnCliente, () => false);
   const vista = useRef({ form, editId, editClienteId, editLocal });
   const catalogosRef = useRef({ transportes: [], choferes: [], lugares: [] });
   catalogosRef.current = { transportes, choferes, lugares };
@@ -242,9 +248,11 @@ export default function LlenadoDatos() {
     const draft = leerBorrador();
     if (draft) {
       setForm({ ...blankForm, ...draft.form });
-      setEditId(draft.editId ?? null);
-      setEditClienteId(draft.editClienteId ?? null);
-      setEditLocal(Boolean(draft.editLocal));
+      if (esAdmin) {
+        setEditId(draft.editId ?? null);
+        setEditClienteId(draft.editClienteId ?? null);
+        setEditLocal(Boolean(draft.editLocal));
+      }
     }
     setFechaVista(draft?.form?.fecha || todayInput());
     setBorradorListo(true);
@@ -260,7 +268,7 @@ export default function LlenadoDatos() {
       id_procedencia: prev.id_procedencia ?? "",
       id_destino: prev.id_destino ?? "",
     }));
-  }, [loadAll]);
+  }, [esAdmin, loadAll]);
 
   useEffect(() => {
     if (!borradorListo) return;
@@ -382,6 +390,7 @@ export default function LlenadoDatos() {
   }
 
   function startEdit(row) {
+    if (!esAdmin) return;
     setEditId(row.id_llegada);
     setEditClienteId(row.cliente_id || null);
     setEditLocal(Boolean(row.pendiente) && String(row.id_llegada).startsWith("local-"));
@@ -430,6 +439,11 @@ export default function LlenadoDatos() {
     setSaving(true);
     setError("");
     setSuccess("");
+    if (editId && !esAdmin) {
+      setError("Solo el administrador puede editar registros");
+      setSaving(false);
+      return;
+    }
     const cliente_id = editClienteId || nuevoClienteId();
     const camionManual = form.id_transporte === MANUAL;
     const choferManual = form.id_chofer === MANUAL;
@@ -506,6 +520,7 @@ export default function LlenadoDatos() {
   }
 
   async function remove(row) {
+    if (!esAdmin) return;
     const etiqueta = row.numero ? `el viaje de ${row.numero}` : "este registro";
     if (!window.confirm(`¿Eliminar ${etiqueta}?`)) return;
     setError("");
@@ -904,17 +919,19 @@ export default function LlenadoDatos() {
                 <TableCell sx={{ ...tableHeadCellSx, width: "6%" }}>Salida</TableCell>
                 <TableCell sx={{ ...tableHeadCellSx, width: "12%" }}>Destino</TableCell>
                 <TableCell sx={{ ...tableHeadCellSx, width: "7%" }}>Pers. sal.</TableCell>
-                <TableCell sx={{ ...tableHeadCellSx, width: "12%" }}>Chofer</TableCell>
+                <TableCell sx={{ ...tableHeadCellSx, width: esAdmin ? "12%" : "22%" }}>Chofer</TableCell>
                 <TableCell sx={{ ...tableHeadCellSx, width: "8%" }}>Sync</TableCell>
-                <TableCell sx={{ ...tableHeadCellSx, width: "10%" }} align="right">
-                  Acciones
-                </TableCell>
+                {esAdmin && (
+                  <TableCell sx={{ ...tableHeadCellSx, width: "10%" }} align="right">
+                    Acciones
+                  </TableCell>
+                )}
               </TableRow>
             </TableHead>
             <TableBody>
               {!loading && filasVisibles.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={12} align="center" sx={tableEmptyCellSx}>
+                  <TableCell colSpan={esAdmin ? 12 : 11} align="center" sx={tableEmptyCellSx}>
                     {!verTodas && fechaVista ? "No hay viajes en este día. Elija otra fecha o pulse Todas." : "No hay viajes registrados"}
                   </TableCell>
                 </TableRow>
@@ -941,14 +958,16 @@ export default function LlenadoDatos() {
                       <Chip size="small" label="Enviado" color="success" variant="outlined" />
                     )}
                   </TableCell>
-                  <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-                    <IconButton size="small" aria-label="Editar" onClick={() => startEdit(row)}>
-                      <Edit fontSize="small" />
-                    </IconButton>
-                    <IconButton size="small" color="error" aria-label="Eliminar" onClick={() => remove(row)}>
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  </TableCell>
+                  {esAdmin && (
+                    <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+                      <IconButton size="small" aria-label="Editar" onClick={() => startEdit(row)}>
+                        <Edit fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" color="error" aria-label="Eliminar" onClick={() => remove(row)}>
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

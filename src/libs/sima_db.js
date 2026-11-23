@@ -29,6 +29,13 @@ async function exigirConfiguracion() {
   }
 }
 
+async function exigirAdministrador() {
+  const jar = await cookies();
+  if (jar.get("sima_acceso")?.value !== "configuracion") {
+    throw errorEstado("Solo el administrador puede editar o eliminar registros", 403);
+  }
+}
+
 function dia(value) {
   if (!value) return "";
   return String(value).slice(0, 10);
@@ -557,6 +564,7 @@ async function crearLlegadaUnica(cliente_id, value) {
 }
 
 export async function updateLlegada(id, value) {
+  await exigirAdministrador();
   const transporte = await resolverTransporte(value);
   const chofer = await resolverChofer(value);
   const procedencia = value.id_procedencia ? await assertLugarActivo(value.id_procedencia, "la procedencia") : null;
@@ -590,6 +598,7 @@ export async function updateLlegada(id, value) {
 }
 
 export async function deleteLlegada(id) {
+  await exigirAdministrador();
   const header = await consultar(
     "UPDATE llegadas SET estado = 'inactivo' WHERE id_llegada = ? AND estado = 'activo'",
     [id],
