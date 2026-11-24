@@ -440,7 +440,7 @@ function filaLlegada(row) {
     personas_entrada: Number(row.personas_entrada),
     hora_salida: hora(row.hora_salida),
     id_destino: row.id_destino,
-    destino: row.destino_nombre || row.destino || "",
+    destino: row.destino_nombre || row.destino || "NA",
     personas_salida: Number(row.personas_salida),
     id_chofer: row.id_chofer,
     chofer: row.chofer_nombre || row.chofer || "",
@@ -535,7 +535,7 @@ async function crearLlegadaUnica(cliente_id, value) {
   const transporte = await resolverTransporte(value);
   const chofer = await resolverChofer(value);
   const procedencia = value.id_procedencia ? await assertLugarActivo(value.id_procedencia, "la procedencia") : null;
-  const destino = await assertLugarActivo(value.id_destino, "el destino");
+  const destino = value.id_destino ? await assertLugarActivo(value.id_destino, "el destino") : null;
 
   const header = await consultar(
     `INSERT INTO llegadas (
@@ -554,7 +554,7 @@ async function crearLlegadaUnica(cliente_id, value) {
       value.personas_entrada,
       value.hora_salida,
       value.id_destino,
-      destino.nombre,
+      destino?.nombre ?? "NA",
       value.personas_salida,
       chofer.id_chofer,
       chofer.nombre,
@@ -568,7 +568,7 @@ export async function updateLlegada(id, value) {
   const transporte = await resolverTransporte(value);
   const chofer = await resolverChofer(value);
   const procedencia = value.id_procedencia ? await assertLugarActivo(value.id_procedencia, "la procedencia") : null;
-  const destino = await assertLugarActivo(value.id_destino, "el destino");
+  const destino = value.id_destino ? await assertLugarActivo(value.id_destino, "el destino") : null;
   const header = await consultar(
     `UPDATE llegadas SET
       id_transporte = ?, transporte = ?, fecha = ?, turno = ?, hora_entrada = ?, id_procedencia = ?, procedencia = ?,
@@ -586,7 +586,7 @@ export async function updateLlegada(id, value) {
       value.personas_entrada,
       value.hora_salida,
       value.id_destino,
-      destino.nombre,
+      destino?.nombre ?? "NA",
       value.personas_salida,
       chofer.id_chofer,
       chofer.nombre,

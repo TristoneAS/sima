@@ -118,7 +118,7 @@ export function filaLocal(op, catalogos) {
     capacidad: transporte?.capacidad ?? payload.capacidad ?? null,
     chofer: chofer?.nombre || payload.chofer || "",
     procedencia: procedencia?.nombre || payload.procedencia || "NA",
-    destino: destino?.nombre || payload.destino || "",
+    destino: destino?.nombre || payload.destino || "NA",
     pendiente: true,
   };
 }

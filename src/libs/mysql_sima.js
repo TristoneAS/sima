@@ -75,7 +75,7 @@ async function ensureSchema(db) {
       procedencia VARCHAR(120) NULL,
       personas_entrada INT NOT NULL,
       hora_salida TIME NOT NULL,
-      id_destino INT NOT NULL,
+      id_destino INT NULL,
       destino VARCHAR(120) NULL,
       personas_salida INT NOT NULL,
       id_chofer INT NULL,
@@ -96,6 +96,7 @@ async function ensureSchema(db) {
     "ADD COLUMN id_chofer INT NULL",
     "ADD COLUMN transporte VARCHAR(120) NULL",
     "MODIFY COLUMN id_transporte INT NULL",
+    "MODIFY COLUMN id_destino INT NULL",
     "ADD UNIQUE KEY uk_llegadas_cliente (cliente_id)",
   ];
   for (const clause of extras) {

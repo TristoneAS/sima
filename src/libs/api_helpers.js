@@ -58,7 +58,8 @@ export function parseLlegada(body) {
       : parseEntero(body?.id_procedencia);
   const personas_entrada = parseEntero(body?.personas_entrada);
   const hora_salida = String(body?.hora_salida ?? "").trim();
-  const id_destino = parseEntero(body?.id_destino);
+  const id_destino =
+    body?.id_destino === "" || body?.id_destino == null ? null : parseEntero(body?.id_destino);
   const personas_salida = parseEntero(body?.personas_salida);
   const id_chofer = idOpcional(body?.id_chofer);
   const chofer = textoManual(body?.chofer);
@@ -79,7 +80,7 @@ export function parseLlegada(body) {
     return { error: "Indique el número de personas de entrada" };
   }
   if (!/^\d{2}:\d{2}$/.test(hora_salida)) return { error: "Indique la hora de salida" };
-  if (!Number.isInteger(id_destino) || id_destino < 1) {
+  if (id_destino !== null && (!Number.isInteger(id_destino) || id_destino < 1)) {
     return { error: "Seleccione el destino" };
   }
   if (!Number.isInteger(personas_salida) || personas_salida < 0) {

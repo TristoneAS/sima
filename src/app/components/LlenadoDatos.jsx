@@ -473,7 +473,7 @@ export default function LlenadoDatos() {
       ...form,
       cliente_id,
       id_procedencia: form.id_procedencia ? Number(form.id_procedencia) : null,
-      id_destino: Number(form.id_destino),
+      id_destino: form.id_destino ? Number(form.id_destino) : null,
       id_transporte: camionManual ? null : Number(form.id_transporte),
       transporte: camionManual ? nombreCamion : "",
       numero: camionManual ? nombreCamion : transporteActual?.numero || "",
@@ -798,12 +798,9 @@ export default function LlenadoDatos() {
               size="small"
               value={form.id_destino ?? ""}
               onChange={(event) => setField("id_destino", event.target.value)}
-              required
               slotProps={{ inputLabel: { shrink: true }, select: { displayEmpty: true } }}
             >
-              <MenuItem value="" disabled>
-                Seleccione
-              </MenuItem>
+              <MenuItem value="">NA</MenuItem>
               {lugares.map((row) => (
                 <MenuItem key={`destino-${row.id_lugar}`} value={String(row.id_lugar)}>
                   {row.nombre}
@@ -836,7 +833,7 @@ export default function LlenadoDatos() {
               type="submit"
               variant="contained"
               startIcon={<Add />}
-              disabled={saving || lugares.length === 0}
+              disabled={saving}
               sx={{ textTransform: "none" }}
             >
               {saving ? "Guardando..." : offline ? "Guardar en este equipo" : editId ? "Guardar" : "Registrar"}
